@@ -2,6 +2,7 @@
 #![cfg(not(target_arch = "wasm32"))]
 #![feature(flt2dec)]
 #![feature(test)]
+#![feature(iter_starts_with)]
 
 extern crate test;
 

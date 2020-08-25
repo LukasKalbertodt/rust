@@ -348,10 +348,10 @@ fn bench_lt(b: &mut Bencher) {
 
 #[bench]
 fn bench_starts_with_vec(b: &mut Bencher) {
-    b.iter(|| black_box((0..100)).collect::<Vec<_>>().starts_with(&[0..3]));
+    b.iter(|| black_box(0..100).collect::<Vec<_>>().starts_with(&[0, 1, 2, 3]));
 }
 
 #[bench]
 fn bench_starts_with_iter(b: &mut Bencher) {
-    b.iter(|| black_box((0..100)).starts_with((0..3)));
+    b.iter(|| black_box(0..100).starts_with(0..3));
 }

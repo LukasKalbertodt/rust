@@ -544,29 +544,31 @@ pub trait Iterator {
 
     /// Checks if an iterator starts with a given iterator.
     ///
+    /// This method returns `true` if `self` yields at least as many items as
+    /// `other` *and* if the first `other.count()` items of `self` compare equal
+    /// to the item of `other`.
+    ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```
     /// #![feature(iter_starts_with)]
-    /// let mut a1 = (0..1000).filter(|i|i % 2 == 0);
-    /// let a2 = (0..3).map(|i|i*2); // 0, 2, 4
+    ///
+    /// let mut a1 = (0..1000).filter(|i| i % 2 == 0);
+    /// let a2 = (0..3).map(|i| i * 2); // 0, 2, 4
     /// assert_eq!(a1.starts_with(a2), true);
     /// ```
     ///
     /// ```
     /// #![feature(iter_starts_with)]
+    ///
     /// let s = "a b c d";
-    /// assert!(s.chars().filter(|c|!c.is_whitespace()).starts_with("abc".chars()));
+    /// assert!(s.chars().filter(|c| !c.is_whitespace()).starts_with("abc".chars()));
     /// ```
-    ///
-    /// `starts_with` exists to avoid needing to `collect::<Vec<_>>` when comparing prefixes of
-    /// iterators.
-    ///
     #[inline]
     #[unstable(feature = "iter_starts_with", reason = "recently added", issue = "none")]
-    fn starts_with<I>(&mut self, other: I) -> bool
+    fn starts_with<I>(mut self, other: I) -> bool
     where
         I: IntoIterator,
         Self::Item: PartialEq<I::Item>,
