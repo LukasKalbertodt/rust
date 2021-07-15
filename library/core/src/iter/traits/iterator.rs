@@ -1528,6 +1528,7 @@ pub trait Iterator {
     where
         Self: Sized,
         F: FnMut(&[Self::Item; N]) -> R,
+        [(); 2 * N]:,
     {
         MapWindows::new(self, f)
     }

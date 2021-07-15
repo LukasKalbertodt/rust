@@ -446,18 +446,37 @@ where
 
 /// Pulls `N` items from `iter` and returns them as an array. If the iterator
 /// yields fewer than `N` items, `None` is returned and all already yielded
-/// items are dropped.
+/// items are dropped. This behaves like `collect_into_array_partial` but
+/// returns an array of `I::Item` directly as we try to pull exactly `N` items
+/// from it.
+pub(crate) fn collect_into_array<I, const N: usize>(iter: &mut I) -> Option<[I::Item; N]>
+where
+    I: Iterator,
+{
+    let array = collect_into_array_partial(iter, N)?;
+
+    // SAFETY: if `collect_into_array_partial` did not return `None`, the first
+    // `N` items of `array` are initialized, i.e. all items are initialized.
+    Some(unsafe { MaybeUninit::array_assume_init(array) })
+}
+
+/// Pulls `count` items from `iter` and returns an array with its first `count`
+/// elements initialized to the items from `iter` and the rest being
+/// uninitialized. If the iterator yields fewer than `count` items, `None` is
+/// returned and all already yielded items are dropped.
 ///
 /// Since the iterator is passed as a mutable reference and this function calls
 /// `next` at most `N` times, the iterator can still be used afterwards to
 /// retrieve the remaining items.
 ///
-/// If `iter.next()` panicks, all items already yielded by the iterator are
+/// If `iter.next()` panics, all items already yielded by the iterator are
 /// dropped.
-pub(crate) fn collect_into_array<I, const N: usize>(iter: &mut I) -> Option<[I::Item; N]>
-where
-    I: Iterator,
-{
+pub(crate) fn collect_into_array_partial<I: Iterator, const N: usize>(
+    iter: &mut I,
+    count: usize,
+) -> Option<[MaybeUninit<I::Item>; N]> {
+    assert!(count <= N);
+
     if N == 0 {
         // SAFETY: An empty array is always inhabited and has no validity invariants.
         return unsafe { Some(mem::zeroed()) };
@@ -495,18 +514,14 @@ where
         guard.initialized += 1;
 
         // Check if the whole array was initialized.
-        if guard.initialized == N {
+        if guard.initialized == count {
             mem::forget(guard);
-
-            // SAFETY: the condition above asserts that all elements are
-            // initialized.
-            let out = unsafe { MaybeUninit::array_assume_init(array) };
-            return Some(out);
+            return Some(array);
         }
     }
 
     // This is only reached if the iterator is exhausted before
-    // `guard.initialized` reaches `N`. Also note that `guard` is dropped here,
-    // dropping all already initialized elements.
+    // `guard.initialized` reaches `count`. Also note that `guard` is dropped
+    // here, dropping all already initialized elements.
     None
 }
